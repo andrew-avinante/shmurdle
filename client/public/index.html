@@ -1,17 +1,68 @@
 <!DOCTYPE html>
 <html lang="">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-    <title>Shmurdle - A Shmeasty Word Game</title>
-  </head>
-  <body>
-    <noscript>
-      <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
-    </noscript>
-    <div id="app"></div>
-    <!-- built files will be auto injected -->
-  </body>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+  <title>Shmurdle - A Shmeasty Word Game</title>
+  <style>
+    html {
+      height: 100%;
+    }
+
+    body {
+      font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+      font-weight: 600;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #app {
+      height: calc(100% - 52px)
+    }
+
+    @media (max-height: 658px) {
+      #app {
+        height: auto;
+      }
+    }
+
+    header {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: nowrap;
+      height: 51px;
+      color: black;
+      border-bottom: 1px solid #d3d6da
+    }
+
+    .title {
+      font-size: 37px;
+      line-height: 100%;
+      text-align: center;
+      left: 0;
+      right: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <noscript>
+    <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled.
+        Please enable it to continue.</strong>
+  </noscript>
+  <header>
+    <div></div>
+    <div class="title">SHMURDLE</div>
+    <div></div>
+  </header>
+  <div id="app"></div>
+  <!-- built files will be auto injected -->
+</body>
+
 </html>

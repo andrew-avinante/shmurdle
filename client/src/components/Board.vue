@@ -50,7 +50,6 @@ export default {
 }
 
 .tile {
-  width: 100%;
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -63,6 +62,12 @@ export default {
   text-transform: uppercase;
   user-select: none;
   width: 62px;
+}
+
+@media (max-width: 450px) {
+  .tile {
+    width: 58px
+  }
 }
 
 .tile[data-state="tbd"] {

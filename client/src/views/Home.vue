@@ -2,6 +2,7 @@
   <div class="home">
     <Board :tries="tries" :word-length="wordLength" :board-state="boardState" />
     <Keyboard @clicked="updateBoard" :keyboard-state="keyboardState" />
+    <Modal :class="{hide: !showModal}" @next="nextLevel" @share="shareScore" :show-next="wordLength < 10"/>
   </div>
 </template>
 
@@ -9,6 +10,7 @@
 // @ is an alias to /src
 import Board from "@/components/Board.vue";
 import Keyboard from "@/components/Keyboard.vue";
+import Modal from "@/components/Modal.vue"
 import axios from "axios";
 
 const sleep = function (ms) {
@@ -25,6 +27,32 @@ const countLetterOccurences = function (word) {
   return result;
 };
 
+const shareScore = function() {
+  const vm = this;
+  let result = `Shmurdle ${vm.evaluations.length} / ${vm.tries}`;
+
+  for(let i = 0; i < vm.evaluations.length; i++) {
+    result += "\n"
+    for(let j = 0; j < vm.evaluations[i].length; j++) {
+      switch(vm.evaluations[i][j]) {
+        case "correct":
+          result += "🟩";
+          break;
+        case "present":
+          result += "🟨";
+          break;
+        default:
+          result += "⬛";
+      }
+    }
+  }
+
+  navigator.share({
+    title: "Share results",
+    text: result
+  });
+}
+
 const countOccurrences = (arr, val) =>
   arr.reduce((a, v) => (v === val ? a + 1 : a), 0);
 
@@ -38,7 +66,7 @@ const revertToIdle = function (row, column) {
 const updateBoard = async function (data) {
   const vm = this;
 
-  if (vm.currentRow >= vm.tries || vm.solved) {
+  if (vm.currentRow >= vm.tries || vm.solved || vm.isLoading) {
     return;
   }
 
@@ -66,16 +94,17 @@ const updateBoard = async function (data) {
     vm.currentRow < vm.tries &&
     ["↵", "Enter"].includes(data) &&
     !vm.boardState[vm.currentRow].some((e) => e.value === null) &&
-    (await vm.isValidWord(word))
+    (await vm.isValidWord(word)) &&
+    !vm.isLoading
   ) {
+    vm.isLoading = true;
     let key = await vm.checkWord(vm.currentRow, word);
     vm.updateKeyboardState(key, word);
     vm.solved = countOccurrences(key, "correct") === vm.wordLength;
     vm.currentRow++;
     vm.currentCol = 0;
-    if(vm.solved) {
-      vm.resetLevel(vm.wordLength + 1);
-    }
+
+    vm.isLoading = false;
   }
 };
 
@@ -158,7 +187,7 @@ const saveWordEvaluation = async function (word, evaluation) {
 
   let board_state = JSON.parse(localStorage.getItem("board_state")) || [];
   let evaluations = JSON.parse(localStorage.getItem("evaluations")) || [];
-  let solved = countOccurrences(evaluation, "correct") === wordLength;
+  let solved = countOccurrences(evaluation, "correct") === vm.wordLength;
 
   if (board_state.length != evaluations.length) {
     board_state = [];
@@ -167,6 +196,7 @@ const saveWordEvaluation = async function (word, evaluation) {
 
   board_state.push(word);
   evaluations.push(evaluation);
+  vm.evaluations.push(evaluation);
 
   localStorage.setItem("board_state", JSON.stringify(board_state));
   localStorage.setItem("evaluations", JSON.stringify(evaluations));
@@ -183,6 +213,7 @@ const resetLevel = function(wordLength) {
     vm.solved = false;
     vm.keyboardState = {};
     vm.currentRow = 0;
+    vm.evaluations = [];
     vm.boardState = createBoard(vm.wordLength, tries);
     localStorage.setItem("board_state", JSON.stringify([]));
     localStorage.setItem("evaluations", JSON.stringify([]));
@@ -213,19 +244,19 @@ const loadLocalStorage = async function () {
   }
 
   let board_state = JSON.parse(localStorage.getItem("board_state")) || [];
-  let evaluations = JSON.parse(localStorage.getItem("evaluations")) || [];
+  vm.evaluations = JSON.parse(localStorage.getItem("evaluations")) || [];
   vm.solved = (localStorage.getItem("solved") || false) === "true";
   vm.wordLength = parseInt(localStorage.getItem("word_length")) || 5;
   vm.boardState = createBoard(vm.wordLength, tries);
 
-  if (!board_state.length || !evaluations.length) {
+  if (!board_state.length || !vm.evaluations.length) {
     return;
   }
 
   for (let i = 0; i < board_state.length; i++) {
     for (let j = 0; j < board_state[i].length; j++) {
       vm.boardState[i][j].value = board_state[i][j];
-      vm.boardState[i][j].state = evaluations[i][j];
+      vm.boardState[i][j].state = vm.evaluations[i][j];
     }
   }
 
@@ -243,7 +274,7 @@ const loadLocalStorage = async function () {
   }
 
   for (let i = 0; i < board_state.length; i++) {
-    vm.updateKeyboardState(evaluations[i], board_state[i]);
+    vm.updateKeyboardState(vm.evaluations[i], board_state[i]);
   }
 
   vm.currentRow = board_state.length;
@@ -251,7 +282,7 @@ const loadLocalStorage = async function () {
 
 const isValidWord = async function (word) {
   return (
-    await axios.get(`https://api.andrewavinante.com/api/check-word?word=${word}`)
+    (await axios.get(`https://api.andrewavinante.com/api/check-word?word=${word}`))
     // (await axios.get(`https://localhost:44386/api/check-word?word=${word}`))
       .data
   );
@@ -274,6 +305,12 @@ const createBoard = function (wordLength, tries) {
   return board;
 };
 
+const nextLevel = function() {
+  const vm = this;
+  vm.resetLevel(vm.wordLength + 1);
+  vm.showModal = false;
+}
+
 const tries = 6;
 const wordLength = 5;
 
@@ -289,11 +326,15 @@ export default {
       masterWord: null,
       solved: false,
       keyboardState: {},
+      isLoading: false,
+      showModal: false,
+      evaluation: []
     };
   },
   components: {
     Board,
     Keyboard,
+    Modal
   },
   methods: {
     updateBoard: updateBoard,
@@ -303,7 +344,17 @@ export default {
     updateKeyboardState: updateKeyboardState,
     saveWordEvaluation: saveWordEvaluation,
     loadLocalStorage: loadLocalStorage,
-    resetLevel: resetLevel
+    resetLevel: resetLevel,
+    shareScore: shareScore,
+    nextLevel: nextLevel
+  },
+  watch: {
+    solved: function() {
+      const vm = this;
+      if(vm.solved) {
+        vm.showModal = true;
+      }
+    }
   },
   async mounted() {
     const vm = this;
@@ -320,8 +371,8 @@ export default {
 
     axios
       .get(
-        // `https://api.andrewavinante.com/api/word-of-the-day?length=${vm.wordLength}`
-        `https://localhost:44386/api/word-of-the-day?length=${vm.wordLength}`
+        `https://api.andrewavinante.com/api/word-of-the-day?length=${vm.wordLength}`
+        // `https://localhost:44386/api/word-of-the-day?length=${vm.wordLength}`
       )
       .then((response) => {
         vm.masterWord = response.data.word;
@@ -338,5 +389,9 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.hide {
+  display: none;
 }
 </style>
