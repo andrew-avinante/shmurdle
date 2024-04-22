@@ -222,7 +222,7 @@ const resetLevel = function(wordLength) {
     localStorage.setItem("word_length", wordLength);
      axios
       .get(
-        `https://api.andrewavinante.com/api/word-of-the-day?length=${vm.wordLength}`
+        `/api/word-of-the-day?length=${vm.wordLength}`
         // `https://localhost:44386/api/word-of-the-day?length=${vm.wordLength}`
       )
       .then((response) => {
@@ -282,7 +282,7 @@ const loadLocalStorage = async function () {
 
 const isValidWord = async function (word) {
   return (
-    (await axios.get(`https://api.andrewavinante.com/api/check-word?word=${word}`))
+    (await axios.get(`/api/check-word?word=${word}`))
     // (await axios.get(`https://localhost:44386/api/check-word?word=${word}`))
       .data
   );
@@ -371,7 +371,7 @@ export default {
 
     axios
       .get(
-        `https://api.andrewavinante.com/api/word-of-the-day?length=${vm.wordLength}`
+        `/api/word-of-the-day?length=${vm.wordLength}`
         // `https://localhost:44386/api/word-of-the-day?length=${vm.wordLength}`
       )
       .then((response) => {
