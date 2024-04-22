@@ -51,11 +51,6 @@ namespace server
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "server v1"));
-            } else
-            {
-                app.UseCors(
-                    options => options.WithOrigins("shmurdle.andrewavinante.com").AllowAnyMethod().AllowAnyOrigin().AllowAnyHeader()
-                );
             }
 
             app.UseHttpsRedirection();
